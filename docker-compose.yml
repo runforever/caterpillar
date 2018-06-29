@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  spider:
+    image: hub.defcoding.com/caterpillar:latest
+    command: scrapy crawl 58
+    volumes:
+      - .:/code
+    environment:
+      - PYTHONPATH=/code
+      - C_FORCE_ROOT=true
+    network_mode: bridge
+    external_links:
+      - product_postgres:postgres

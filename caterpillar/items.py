@@ -8,7 +8,17 @@
 import scrapy
 
 
-class CaterpillarItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class House(scrapy.Item):
+    '''
+    房源信息
+    '''
+    source_url = scrapy.Field()
+    title = scrapy.Field()
+    price = scrapy.Field()
+    payment = scrapy.Field()
+    house_type = scrapy.Field()
+    house_community = scrapy.Field()
+    region = scrapy.Field()
+    address = scrapy.Field()
+    desc = scrapy.Field()
+    imgs = scrapy.Field()
