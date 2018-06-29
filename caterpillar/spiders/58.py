@@ -2,10 +2,11 @@ import scrapy
 
 from bs4 import BeautifulSoup
 
-from ..items import House
+from caterpillar.items import House
 
 
 class QuotesSpider(scrapy.Spider):
+
     name = '58'
 
     custom_settings = {
@@ -16,19 +17,27 @@ class QuotesSpider(scrapy.Spider):
 
     def start_requests(self):
         urls = [
-            # 'http://cd.58.com/zufang/0/'
-            'http://cd.58.com/zufang/34540463083843x.shtml?from=1-list-0&iuType=z_0&PGTID=0d300008-0006-63f5-4dbf-7dd529e9b1dd&ClickID=2&adtype=3'
+            'http://cd.58.com/zufang/0/'
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse_detail)
+            yield scrapy.Request(url=url, callback=self.parse_list)
 
     def parse_list(self, response):
         soup = BeautifulSoup(response.text, 'lxml')
-        house_list = soup.select('div.des > h2 > a')
 
-        for house in house_list:
+        # crawl house detail
+        house_list = soup.select('div.des > h2 > a:nth-of-type(1)')
+        for house in house_list[:5]:
             house_detail_url = house['href']
             yield scrapy.Request(url=house_detail_url, callback=self.parse_detail)
+
+        # crawl house list page
+        page_urls = [
+            url.attrs.get('href') for url in soup.select('div.pager > a')
+            if url.attrs.get('href')
+        ]
+        for url in page_urls[:2]:
+            yield scrapy.Request(url=url, callback=self.parse_list)
 
     def parse_detail(self, response):
         soup = BeautifulSoup(response.text, 'lxml')
@@ -47,11 +56,13 @@ class QuotesSpider(scrapy.Spider):
             key: value.text.replace('\n', '').replace('\xa0\xa0', '').replace(' ', '')
             for key, value in house_dict.items() if value
         }
-        import ipdb; ipdb.set_trace()
 
         img_list = soup.select('ul.house-pic-list > li > img')
         img_urls = [img.attrs['lazy_src'] for img in img_list]
         house_dict['imgs'] = img_urls
+
+        if not house_dict.get('title'):
+            return False
 
         house = House(
             source_url=response.url,
